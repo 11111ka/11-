@@ -1,0 +1,111 @@
+import controlP5.*;
+import processing.core.PImage;
+
+ControlP5 cp5;
+PImage img;
+boolean imageLoaded = false;
+Slider tilesSlider;
+RadioButton shapeSelector;
+int shapeMode = 0; // 0 代表正方形，1 代表圆形
+
+void setup() {
+  size(800, 800);
+  cp5 = new ControlP5(this);
+
+  // 创建并调整上传图片按钮的大小和颜色
+  Button uploadButton = cp5.addButton("uploadImage")
+     .setPosition(20, 20)
+     .setSize(120, 45)
+     .setLabel("Upload Image");
+  uploadButton.getCaptionLabel().setSize(10);
+  uploadButton.setColorBackground(color(0));
+
+  // 创建并调整滑动条的大小和颜色
+  tilesSlider = cp5.addSlider("tilesSlider")
+                  .setPosition(20, 80)
+                  .setSize(120, 45)
+                  .setRange(10, 100)
+                  .setValue(50);
+  tilesSlider.setColorBackground(color(0));
+  tilesSlider.getCaptionLabel().setVisible(false);
+
+  // 创建并调整保存图片按钮的大小和颜色
+  Button saveButton = cp5.addButton("saveMosaic")
+     .setPosition(20, 140)
+     .setSize(120, 45)
+     .setLabel("Save Image");
+  saveButton.getCaptionLabel().setSize(10);
+  saveButton.setColorBackground(color(0));
+
+  // 创建形状选择单选按钮
+  shapeSelector = cp5.addRadioButton("shapeSelector")
+                    .setPosition(20, 200)
+                    .setSize(40, 20)
+                    .setColorForeground(color(120))
+                    .setColorActive(color(255))
+                    .setColorLabel(color(0))
+                    .addItem("Square", 0)
+                    .addItem("Circle", 1);
+  shapeSelector.getCaptionLabel().setSize(10);
+
+  // 等待用户上传图片
+  imageLoaded = false; // 初始设为未加载图片
+}
+
+void draw() {
+  background(255);
+  if (imageLoaded) {
+    applyMosaicEffect();
+  }
+}
+
+// 应用马赛克效果
+void applyMosaicEffect() {
+  float ratio = float(height) / float(width);
+  float tilesX = tilesSlider.getValue();
+  float tilesY = ratio * tilesX;
+  float tileXSize = width / tilesX;
+  float tileYSize = height / tilesY;
+
+  for (int y = 0; y < img.height; y += tileYSize) {
+    for (int x = 0; x < img.width; x += tileXSize) {
+      color c = img.get(x, y);
+      float b = map(brightness(c), 0, 255, 1, 0);
+      fill(0);
+      noStroke();
+      // 根据形状模式绘制相应的形状
+      if (shapeMode == 0) { // 正方形
+        rect(x, y, b * tileXSize, b * tileYSize);
+      } else if (shapeMode == 1) { // 圆形
+        ellipse(x + tileXSize / 2, y + tileYSize / 2, b * tileXSize, b * tileYSize);
+      }
+    }
+  }
+}
+
+// 图片上传逻辑
+public void uploadImage() {
+  selectInput("Select a file:", "fileSelected");
+}
+
+public void fileSelected(File selection) {
+  if (selection == null) {
+    println("Window was closed or the user hit cancel.");
+  } else {
+    img = loadImage(selection.getAbsolutePath());
+    img.resize(width, height);
+    imageLoaded = true;
+  }
+}
+
+// 保存马赛克图片
+public void saveMosaic() {
+  saveFrame("mosaic-######.png");
+}
+
+// 处理形状选择事件
+public void controlEvent(ControlEvent event) {
+  if (event.isFrom(shapeSelector)) {
+    shapeMode = int(event.getValue());
+  }
+}
